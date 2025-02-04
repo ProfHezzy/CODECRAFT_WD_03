@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 10px;
+            justify-content: center;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            border: 3px solid #333;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .cell:hover {
+            background-color: #ddd;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .modal button {
+            margin-top: 10px;
+            padding: 10px 15px;
+            font-size: 1em;
+            border: none;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic-Tac-Toe</h1>
+    <div class="board" id="board"></div>
+    <button class="btn" onclick="restartGame()">Restart Game</button>
+    <div id="winModal" class="modal">
+        <p id="winMessage"></p>
+        <button onclick="closeModalAndRestart()">OK</button>
+    </div>
+    <script>
+        let boardState = Array(9).fill(null);
+        let currentPlayer = 'X';
+        
+        function createBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            boardState.fill(null);
+            currentPlayer = 'X';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', makeMove);
+                board.appendChild(cell);
+            }
+        }
+
+        function restartGame() {
+            createBoard();
+            closeModal();
+        }
+
+        function makeMove(event) {
+            const cell = event.target;
+            const index = cell.dataset.index;
+            if (!boardState[index]) {
+                boardState[index] = currentPlayer;
+                cell.innerText = currentPlayer;
+                if (checkWinner()) {
+                    setTimeout(() => showWinMessage(`Player ${currentPlayer} wins!`), 100);
+                    disableBoard();
+                    return;
+                }
+                currentPlayer = 'O';
+                setTimeout(computerMove, 500);
+            }
+        }
+
+        function computerMove() {
+            let emptyCells = boardState.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+            if (emptyCells.length === 0) return;
+            let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            boardState[randomIndex] = 'O';
+            document.querySelector(`[data-index='${randomIndex}']`).innerText = 'O';
+            if (checkWinner()) {
+                setTimeout(() => showWinMessage("Computer wins!"), 100);
+                disableBoard();
+                return;
+            }
+            currentPlayer = 'X';
+        }
+
+        function checkWinner() {
+            const winningCombinations = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            return winningCombinations.some(combination => {
+                const [a, b, c] = combination;
+                return boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c];
+            });
+        }
+
+        function disableBoard() {
+            document.querySelectorAll('.cell').forEach(cell => cell.removeEventListener('click', makeMove));
+        }
+
+        function showWinMessage(message) {
+            document.getElementById('winMessage').innerText = message;
+            document.getElementById('winModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('winModal').style.display = 'none';
+        }
+
+        function closeModalAndRestart() {
+            closeModal();
+            restartGame();
+        }
+
+        window.onload = createBoard;
+    </script>
+</body>
+</html>
