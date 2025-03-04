@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe (Unbeatable AI)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background-color: #1e1e2e;
+            color: #ffffff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 10px;
+            background: #282a36;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .cell {
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            border: 2px solid #61dafb;
+            background-color: #44475a;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            border-radius: 10px;
+            color: #61dafb;
+            font-weight: bold;
+        }
+        .cell:hover {
+            background-color: #6272a4;
+        }
+        .btn {
+            padding: 12px 24px;
+            font-size: 1.2em;
+            background-color: #50fa7b;
+            color: #282a36;
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+            margin-top: 15px;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #40d674;
+        }
+        .mode-selection {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic-Tac-Toe | By : Prof.Hezzy</h1>
+    <div class="mode-selection">
+        <button class="btn" onclick="startGame('player')">Play with Another Player</button>
+        <button class="btn" onclick="startGame('ai')">Play with AI</button>
+    </div>
+    <div class="board" id="board" style="display: none;"></div>
+    <button class="btn" id="restartBtn" onclick="restartGame()" style="display: none;">Restart Game</button>
+
+    <script>
+        let boardState = Array(9).fill(null);
+        let currentPlayer = 'X';
+        let gameMode = '';
+
+        function startGame(mode) {
+            gameMode = mode;
+            document.querySelector('.mode-selection').style.display = 'none';
+            document.getElementById('board').style.display = 'grid';
+            document.getElementById('restartBtn').style.display = 'block';
+            createBoard();
+        }
+
+        function createBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            boardState.fill(null);
+            currentPlayer = 'X';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', makeMove);
+                board.appendChild(cell);
+            }
+        }
+
+        function restartGame() {
+            document.querySelector('.mode-selection').style.display = 'flex';
+            document.getElementById('board').style.display = 'none';
+            document.getElementById('restartBtn').style.display = 'none';
+        }
+
+        function makeMove(event) {
+            const cell = event.target;
+            const index = cell.dataset.index;
+            if (!boardState[index]) {
+                boardState[index] = currentPlayer;
+                cell.innerText = currentPlayer;
+                if (checkWinner()) {
+                    setTimeout(() => alert(`Player ${currentPlayer} wins!`), 100);
+                    restartGame();
+                    return;
+                }
+                if (!boardState.includes(null)) {
+                    setTimeout(() => alert("It's a Draw!"), 100);
+                    restartGame();
+                    return;
+                }
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                if (gameMode === 'ai' && currentPlayer === 'O') {
+                    setTimeout(aiMove, 500);
+                }
+            }
+        }
+
+        function aiMove() {
+            let bestMove = minimax(boardState, 'O').index;
+            boardState[bestMove] = 'O';
+            document.querySelector(`[data-index='${bestMove}']`).innerText = 'O';
+            if (checkWinner()) {
+                setTimeout(() => alert("AI Wins!"), 100);
+                restartGame();
+                return;
+            }
+            currentPlayer = 'X';
+        }
+
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            return winPatterns.some(pattern => pattern.every(index => boardState[index] === currentPlayer));
+        }
+
+        function minimax(newBoard, player) {
+            let emptyCells = newBoard.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+
+            if (winning(newBoard, 'X')) return { score: -10 };
+            if (winning(newBoard, 'O')) return { score: 10 };
+            if (emptyCells.length === 0) return { score: 0 };
+
+            let moves = [];
+            for (let i of emptyCells) {
+                let move = {};
+                move.index = i;
+                newBoard[i] = player;
+
+                if (player === 'O') {
+                    move.score = minimax(newBoard, 'X').score;
+                } else {
+                    move.score = minimax(newBoard, 'O').score;
+                }
+
+                newBoard[i] = null;
+                moves.push(move);
+            }
+
+            let bestMove;
+            if (player === 'O') {
+                let bestScore = -Infinity;
+                for (let i = 0; i < moves.length; i++) {
+                    if (moves[i].score > bestScore) {
+                        bestScore = moves[i].score;
+                        bestMove = i;
+                    }
+                }
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < moves.length; i++) {
+                    if (moves[i].score < bestScore) {
+                        bestScore = moves[i].score;
+                        bestMove = i;
+                    }
+                }
+            }
+
+            return moves[bestMove];
+        }
+
+        function winning(board, player) {
+            return [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ].some(pattern => pattern.every(index => board[index] === player));
+        }
+    </script>
+</body>
+</html>
